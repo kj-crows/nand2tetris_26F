@@ -70,12 +70,5 @@ CHIP ALU {
     
     // ng
    And(a=outLSB, b=true, out=ng);
-   
-    
-    
-    
-
-    
-    
     
 }
