@@ -1,0 +1,146 @@
+// File name: projects/9/Pong/Bat.jack
+/**
+ * A bitmap bat in a Pong game.
+ * The sprite is 57 pixels wide (4 screen words) and 15 pixels tall: the
+ * original 19x15 bitmap stretched 3x horizontally.
+ * Because it is drawn with Memory.poke, it can only sit on 16-pixel word
+ * boundaries, so the bat moves one word column (16 pixels) per step.
+ */
+class Bat {
+
+    field int col;        // left screen word column (0..28); pixel x = col * 16
+    field int y;          // top pixel row of the sprite
+    field int direction;  // 0 = stop, 1 = left, 2 = right
+    field int tick;       // frame counter that slows the bat down
+
+    /** Constructs a new bat at pixel position (Ax, Ay). Ax is snapped to a word column. */
+    constructor Bat new(int Ax, int Ay) {
+        let col = Ax / 16;
+        let y = Ay;
+        let direction = 2;
+        let tick = 0;
+        do show();
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the bitmap (all-zero words are skipped; hide() has already cleared them). */
+    method void show() {
+        var int a;
+        let a = 16384 + (y * 32) + col;
+        // word 0 (pixels 0-15)
+        do Memory.poke(a + 32, -4096);
+        do Memory.poke(a + 64, 4032);
+        do Memory.poke(a + 96, -3592);
+        do Memory.poke(a + 128, -449);
+        do Memory.poke(a + 160, -57);
+        do Memory.poke(a + 192, -57);
+        do Memory.poke(a + 224, -505);
+        do Memory.poke(a + 256, 63);
+        do Memory.poke(a + 288, -64);
+        // word 1 (pixels 16-31)
+        do Memory.poke(a + 1, -32);
+        do Memory.poke(a + 33, 31);
+        do Memory.poke(a + 65, -32);
+        do Memory.poke(a + 97, -1);
+        do Memory.poke(a + 129, -1);
+        do Memory.poke(a + 161, -1);
+        do Memory.poke(a + 193, -1);
+        do Memory.poke(a + 225, -1);
+        do Memory.poke(a + 289, 31);
+        do Memory.poke(a + 321, -14368);
+        do Memory.poke(a + 353, -256);
+        do Memory.poke(a + 385, -256);
+        do Memory.poke(a + 417, -256);
+        do Memory.poke(a + 449, -256);
+        // word 2 (pixels 32-47)
+        do Memory.poke(a + 2, 15);
+        do Memory.poke(a + 34, 8176);
+        do Memory.poke(a + 66, -8177);
+        do Memory.poke(a + 98, 8191);
+        do Memory.poke(a + 130, -1);
+        do Memory.poke(a + 162, -1);
+        do Memory.poke(a + 194, -1);
+        do Memory.poke(a + 226, -1);
+        do Memory.poke(a + 290, -16);
+        do Memory.poke(a + 322, 15);
+        do Memory.poke(a + 354, 1);
+        do Memory.poke(a + 386, 1);
+        do Memory.poke(a + 418, 1);
+        do Memory.poke(a + 450, 1);
+        // word 3 (pixels 48-56)
+        do Memory.poke(a + 67, 7);
+        do Memory.poke(a + 99, 63);
+        do Memory.poke(a + 131, 504);
+        do Memory.poke(a + 163, 455);
+        do Memory.poke(a + 195, 455);
+        do Memory.poke(a + 227, 448);
+        do Memory.poke(a + 259, 511);
+        do Memory.poke(a + 291, 7);
+        return;
+    }
+
+    /** Erases the bitmap by clearing all 4 words in all 15 rows. */
+    method void hide() {
+        var int a, r;
+        let a = 16384 + (y * 32) + col;
+        let r = 0;
+        while (r < 15) {
+            do Memory.poke(a, 0);
+            do Memory.poke(a + 1, 0);
+            do Memory.poke(a + 2, 0);
+            do Memory.poke(a + 3, 0);
+            let a = a + 32;
+            let r = r + 1;
+        }
+        return;
+    }
+
+    /** Sets the bat's direction (0=stop, 1=left, 2=right). */
+    method void setDirection(int Adirection) {
+        let direction = Adirection;
+        return;
+    }
+
+    /** Returns the bat's left edge (in pixels). */
+    method int getLeft() {
+        return col * 16;
+    }
+
+    /** Returns the bat's right edge (in pixels). */
+    method int getRight() {
+        return (col * 16) + 56;
+    }
+
+    /**
+     * Moves the bat one word column (16 pixels) in its direction,
+     * but only every 4th call, so its speed is similar to the original bat.
+     * Lower the 3 below for a faster bat, raise it for a slower one.
+     */
+    method void move() {
+        let tick = tick + 1;
+        if (tick > 2) {
+            let tick = 0;
+            if (direction = 1) {
+                if (col > 0) {
+                    do hide();
+                    let col = col - 1;
+                    do show();
+                }
+            }
+            if (direction = 2) {
+                if (col < 28) {    // the last word must stay on the same screen row
+                    do hide();
+                    let col = col + 1;
+                    do show();
+                }
+            }
+        }
+        return;
+    }
+}
